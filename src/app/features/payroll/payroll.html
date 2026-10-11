@@ -1,0 +1,197 @@
+<app-shell pageTitle="Payroll">
+  <div class="page-tabs">
+    <button type="button" [class.active]="pageView() === 'submit'" (click)="setPageView('submit')">
+      <app-icon name="payroll" [size]="16" />
+      Submit Claim
+    </button>
+    <button type="button" [class.active]="pageView() === 'history'" (click)="setPageView('history')">
+      <app-icon name="calendar-days" [size]="16" />
+      History
+    </button>
+  </div>
+
+  @if (pageView() === 'submit') {
+    @if (isLocked()) {
+      <div class="lock-banner" [class.approved]="currentClaimForPeriod()?.status !== PayrollClaimStatus.PENDING">
+        <app-icon name="lock" [size]="16" />
+        <span>{{ lockMessage() }}</span>
+      </div>
+    }
+
+    <div class="submit-layout">
+      <section class="panel form-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Claim details</h2>
+          <div class="period-picker-wrap">
+            <div class="period-picker-pill">
+              <app-icon name="calendar" [size]="14" />
+              <input
+                type="month"
+                [value]="selectedPeriod()"
+                (change)="setSelectedPeriod($any($event.target).value)"
+              />
+            </div>
+            @if (selectedPeriodRangeLabel()) {
+              <span class="period-picker-caption">{{ selectedPeriodRangeLabel() }}</span>
+            }
+          </div>
+        </div>
+
+        @if (error()) {
+          <div class="form-error">{{ error() }}</div>
+        }
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="basic-pay">Basic Pay</label>
+            <input
+              id="basic-pay"
+              type="number"
+              min="0"
+              class="field-input"
+              [disabled]="isLocked()"
+              [ngModel]="basicPay()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="basicPay.set($event || 0)"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="bonus">Bonus</label>
+            <input
+              id="bonus"
+              type="number"
+              min="0"
+              class="field-input"
+              [disabled]="isLocked()"
+              [ngModel]="bonus()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="bonus.set($event || 0)"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="deductions">Deductions</label>
+            <input
+              id="deductions"
+              type="number"
+              min="0"
+              class="field-input"
+              [disabled]="isLocked()"
+              [ngModel]="deductions()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="deductions.set($event || 0)"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="reimbursement">Reimbursement</label>
+            <input
+              id="reimbursement"
+              type="number"
+              min="0"
+              class="field-input"
+              [disabled]="isLocked()"
+              [ngModel]="reimbursement()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="reimbursement.set($event || 0)"
+            />
+          </div>
+        </div>
+
+        <div class="field field-notes">
+          <label class="field-label" for="notes">Notes (optional)</label>
+          <textarea
+            id="notes"
+            class="notes-input"
+            placeholder="e.g. Includes this month's travel reimbursement."
+            [disabled]="isLocked()"
+            [ngModel]="notes()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="notes.set($event)"
+          ></textarea>
+        </div>
+      </section>
+
+      <aside class="panel summary-panel">
+        <div class="net-pay-card">
+          <p class="net-pay-breakdown">
+            {{ basicPay() }} + {{ bonus() }} + {{ reimbursement() }} − {{ deductions() }}
+          </p>
+          <div class="net-pay-main">
+            <span class="net-pay-label">Net Pay</span>
+            <span class="net-pay-value">{{ netPayPreview() }}</span>
+          </div>
+        </div>
+
+        @if (!isLocked()) {
+          <div class="form-actions">
+            <button type="button" class="secondary-btn" [disabled]="saving()" (click)="saveDraft()">
+              Save Draft
+            </button>
+            <button type="button" class="cta-btn" [disabled]="saving()" (click)="submitClaim()">
+              {{ saving() ? 'Submitting…' : 'Submit' }}
+            </button>
+          </div>
+        } @else {
+          <p class="summary-hint">
+            <app-icon name="lock" [size]="13" />
+            {{ lockMessage() }}
+          </p>
+        }
+      </aside>
+    </div>
+  } @else {
+    <section class="panel">
+      @if (loading()) {
+        <p class="empty-caption">Loading claims…</p>
+      } @else if (sortedClaims().length === 0) {
+        <p class="empty-caption">No payroll claims yet — submit your first one from the Submit Claim tab.</p>
+      } @else {
+        <div class="entries-list">
+          @for (claim of sortedClaims(); track claim.id) {
+            <div class="entry-card" [class]="claim.status">
+              <span class="entry-icon">
+                <app-icon name="payroll" [size]="16" />
+              </span>
+              <div class="entry-main">
+                <h4 class="entry-title">{{ periodLabel(claim.period) }}</h4>
+                <p class="entry-range">
+                  Basic {{ claim.basicPay }} · Bonus {{ claim.bonus }} · Deductions {{ claim.deductions }}
+                  @if (claim.reimbursement) {
+                    · Reimb. {{ claim.reimbursement }}
+                  }
+                </p>
+              </div>
+              <div class="entry-col">
+                <p class="entry-col-value">{{ claim.netPay }}</p>
+                <p class="entry-col-label">Net Pay</p>
+              </div>
+              <div class="entry-col">
+                <p class="entry-status-row">
+                  <span class="status-dot"></span>
+                  <span class="status-text">{{ claim.status }}</span>
+                </p>
+                <p class="entry-col-label">
+                  {{ claim.status === 'draft' ? 'Not submitted' : (submittedOnFor(claim) ? 'Submitted' : 'Not submitted yet') }}
+                </p>
+              </div>
+              <div class="entry-col entry-col-submitted">
+                @if (submittedOnFor(claim)) {
+                  <p class="entry-submitted-row">
+                    <app-icon name="clock" [size]="13" />
+                    {{ submittedOnFor(claim) | date: 'MMM d, y' }}
+                  </p>
+                  <p class="entry-col-label">{{ submittedOnFor(claim) | date: 'h:mm a' }}</p>
+                } @else {
+                  <p class="entry-submitted-row muted">—</p>
+                }
+              </div>
+              <button type="button" class="view-details-btn" (click)="viewClaim(claim.period)">
+                View Details
+                <app-icon name="chevron-right" [size]="14" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</app-shell>

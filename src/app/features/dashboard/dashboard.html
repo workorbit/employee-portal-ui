@@ -1,0 +1,312 @@
+<app-shell pageTitle="Dashboard">
+  <div class="welcome-header">
+    <h1 class="welcome-title">Welcome back, {{ firstName() }} 👋</h1>
+    <p class="welcome-subtitle">Here's what's happening with your work.</p>
+  </div>
+
+  @if (mustChangePassword()) {
+    <div class="notice-banner">
+      <span class="notice-icon">!</span>
+      <span class="notice-text">You're using a temporary password.</span>
+      <a routerLink="/forgot-password">Set a new one</a>
+    </div>
+  }
+
+  <section class="kpi-row">
+    <div class="kpi-tile">
+      <span class="kpi-icon"><app-icon name="clock" [size]="18" /></span>
+      <div>
+        <p class="kpi-value">{{ totalHoursThisWeek() }} hrs</p>
+        <p class="kpi-label">Total Hours</p>
+        @if (weeklyHoursTrendPercent(); as trend) {
+          <p class="kpi-caption" [class.positive]="trend >= 0" [class.negative]="trend < 0">
+            {{ trend >= 0 ? '↑' : '↓' }} {{ trend < 0 ? -trend : trend }}% vs last week
+          </p>
+        } @else {
+          <p class="kpi-caption">Logged this week</p>
+        }
+      </div>
+    </div>
+    <div class="kpi-tile">
+      <span class="kpi-icon kpi-icon-primary"><app-icon name="timesheets" [size]="18" /></span>
+      <div>
+        <p class="kpi-value">{{ pendingSubmissionsCount() }}</p>
+        <p class="kpi-label">Pending Submissions</p>
+        <p class="kpi-caption">
+          {{ pendingSubmissionsCount() === 0 ? 'No pending timesheets' : 'Awaiting submission' }}
+        </p>
+      </div>
+    </div>
+    <div class="kpi-tile">
+      <span class="kpi-icon kpi-icon-warning"><app-icon name="check" [size]="18" /></span>
+      <div>
+        <p class="kpi-value">{{ pendingCount() }}</p>
+        <p class="kpi-label">Pending Approvals</p>
+        <p class="kpi-caption">{{ pendingCount() === 0 ? 'All caught up' : 'Requires your attention' }}</p>
+      </div>
+    </div>
+    <div class="kpi-tile">
+      <span class="kpi-icon kpi-icon-secondary"><app-icon name="insights" [size]="18" /></span>
+      <div>
+        <p class="kpi-value">{{ approvedHoursThisMonth() }} hrs</p>
+        <p class="kpi-label">Approved This Month</p>
+        <p class="kpi-caption">
+          {{ approvedWeeksThisMonthCount() > 0 ? 'Across ' + approvedWeeksThisMonthCount() + ' weeks' : 'No approved hours yet' }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel chart-panel">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title">Hours logged</h2>
+        <p class="panel-subtitle">Your last {{ chartPoints().length }} timesheet periods</p>
+      </div>
+      <div class="chart-header-controls">
+        <div class="chart-legend">
+          @for (item of statusLegend; track item.status) {
+            <span class="legend-item">
+              <span class="legend-dot" [class]="item.status"></span>
+              {{ item.label }}
+            </span>
+          }
+        </div>
+        <div class="chart-mode-pill">
+          <select aria-label="Chart period" [value]="chartMode()" (change)="setChartMode($any($event.target).value)">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    @if (chartPoints().length === 0) {
+      <p class="empty-caption">No timesheets logged yet — your hours will show up here once you save one.</p>
+    } @else {
+      <div class="chart-wrap">
+        <svg
+          class="chart-svg"
+          [attr.viewBox]="chartViewBox"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Line chart of hours logged per timesheet period, colored by approval status"
+        >
+          <!-- Gridlines + y-axis tick labels -->
+          @for (line of chartGridlines(); track line.label) {
+            <line
+              class="chart-gridline"
+              [attr.x1]="chartGutterLeft"
+              [attr.x2]="chartViewBoxWidth"
+              [attr.y1]="line.y"
+              [attr.y2]="line.y"
+            />
+            <text class="chart-axis-label" [attr.x]="chartGutterLeft - 8" [attr.y]="line.y" text-anchor="end" dominant-baseline="middle">
+              {{ line.label }}
+            </text>
+          }
+
+          <!-- Baseline -->
+          <line
+            class="chart-baseline"
+            [attr.x1]="chartGutterLeft"
+            [attr.x2]="chartViewBox.split(' ')[2]"
+            [attr.y1]="chartBaselineY"
+            [attr.y2]="chartBaselineY"
+          />
+
+          <!-- Area wash + line -->
+          @if (chartAreaPath()) {
+            <path class="chart-area" [attr.d]="chartAreaPath()" />
+          }
+          @if (chartLinePath()) {
+            <path class="chart-line" [attr.d]="chartLinePath()" />
+          }
+
+          <!-- Points, colored by that period's status -->
+          @for (point of chartPoints(); track $index) {
+            <circle
+              class="chart-dot"
+              [class]="point.status"
+              [class.hovered]="hoveredPointIndex() === $index"
+              [attr.cx]="point.x"
+              [attr.cy]="point.y"
+              r="5"
+            />
+            <text class="chart-x-label" [attr.x]="point.labelX" [attr.y]="point.labelY" text-anchor="middle">
+              {{ point.label }}
+            </text>
+            <!-- Hit target spans the whole band (wider than the dot itself) -->
+            <rect
+              class="chart-hit-area"
+              [attr.x]="point.bandX"
+              [attr.y]="0"
+              [attr.width]="point.bandWidth"
+              [attr.height]="chartBaselineY"
+              (pointerenter)="setHoveredPoint($index)"
+              (pointerleave)="setHoveredPoint(null)"
+              (focus)="setHoveredPoint($index)"
+              (blur)="setHoveredPoint(null)"
+              tabindex="0"
+              [attr.aria-label]="point.label + ': ' + point.value + ' hours, ' + point.status"
+            />
+          }
+        </svg>
+
+        @if (hoveredPoint(); as point) {
+          <div class="chart-tooltip" [style.left.%]="point.bandCenterPercent">
+            <strong>{{ point.value }} hrs</strong>
+            <span>{{ point.label }} · {{ point.status }}</span>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="tables-grid">
+    <div class="panel">
+      <div class="table-header-row">
+        <h2 class="panel-title">Recent timesheets</h2>
+        <a class="view-all-link" routerLink="/timesheets">View all</a>
+      </div>
+      @if (recentTimesheets().length === 0) {
+        <div class="empty-state">
+          <span class="empty-state-icon"><app-icon name="timesheets" [size]="28" /></span>
+          <p class="empty-state-title">No timesheets yet.</p>
+          <p class="empty-state-caption">When you log hours, they'll appear here.</p>
+        </div>
+      } @else {
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (timesheet of recentTimesheets(); track timesheet.id) {
+              <tr>
+                <td>{{ periodLabel(timesheet) }}</td>
+                <td>{{ timesheet.totalHours }}</td>
+                <td><span class="status-pill" [class]="timesheet.status">{{ timesheet.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="panel">
+      <div class="table-header-row">
+        <h2 class="panel-title">Recent payroll</h2>
+        <a class="view-all-link" routerLink="/payroll">View all</a>
+      </div>
+      @if (recentPayrollClaims().length === 0) {
+        <div class="empty-state">
+          <span class="empty-state-icon"><app-icon name="payroll" [size]="28" /></span>
+          <p class="empty-state-title">No payroll claims yet.</p>
+          <p class="empty-state-caption">When you submit, it will appear here.</p>
+        </div>
+      } @else {
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Net pay</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (claim of recentPayrollClaims(); track claim.id) {
+              <tr>
+                <td>{{ periodLabel(claim) }}</td>
+                <td>{{ claim.netPay }}</td>
+                <td><span class="status-pill" [class]="claim.status">{{ claim.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="panel">
+      <div class="table-header-row">
+        <h2 class="panel-title">Recent feedback</h2>
+        <a class="view-all-link" routerLink="/feedback">View all</a>
+      </div>
+      @if (recentFeedback().length === 0) {
+        <div class="empty-state">
+          <span class="empty-state-icon"><app-icon name="feedback" [size]="28" /></span>
+          <p class="empty-state-title">No feedback received yet.</p>
+          <p class="empty-state-caption">You're all caught up!</p>
+        </div>
+      } @else {
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Raised</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of recentFeedback(); track item.id) {
+              <tr>
+                <td class="capitalize">{{ item.category.replace('_', ' ') }}</td>
+                <td>{{ item.createdAt | date: 'MMM d' }}</td>
+                <td><span class="status-pill" [class]="item.status">{{ item.status.replace('_', ' ') }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">Quick actions</h2>
+    <div class="quick-actions-grid">
+      <a class="quick-action" routerLink="/timesheets">
+        <span class="quick-action-icon">
+          <app-icon name="timesheets" [size]="20" />
+        </span>
+        <span class="quick-action-body">
+          <span class="quick-action-title">Log this week's hours</span>
+          <span class="quick-action-desc">Add entries and submit for review</span>
+        </span>
+        <app-icon class="quick-action-arrow" name="chevron-right" [size]="16" />
+      </a>
+      <a class="quick-action" routerLink="/payroll">
+        <span class="quick-action-icon">
+          <app-icon name="payroll" [size]="20" />
+        </span>
+        <span class="quick-action-body">
+          <span class="quick-action-title">Submit payroll</span>
+          <span class="quick-action-desc">Log your pay claim for the period</span>
+        </span>
+        <app-icon class="quick-action-arrow" name="chevron-right" [size]="16" />
+      </a>
+      <a class="quick-action" routerLink="/feedback">
+        <span class="quick-action-icon">
+          <app-icon name="feedback" [size]="20" />
+        </span>
+        <span class="quick-action-body">
+          <span class="quick-action-title">Raise a concern</span>
+          <span class="quick-action-desc">Send feedback to your employer</span>
+        </span>
+        <app-icon class="quick-action-arrow" name="chevron-right" [size]="16" />
+      </a>
+      <a class="quick-action" routerLink="/reports">
+        <span class="quick-action-icon">
+          <app-icon name="insights" [size]="20" />
+        </span>
+        <span class="quick-action-body">
+          <span class="quick-action-title">View reports</span>
+          <span class="quick-action-desc">Analyze your work and hours</span>
+        </span>
+        <app-icon class="quick-action-arrow" name="chevron-right" [size]="16" />
+      </a>
+    </div>
+  </section>
+</app-shell>

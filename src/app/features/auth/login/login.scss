@@ -1,0 +1,567 @@
+// ============================================
+// Auth screens — shared base for login, forgot-password, and
+// reset-password (both of those @use this file wholesale and only add
+// what's screen-specific). Visual language matches the rest of the app:
+// the lavender canvas, indigo primary, and the "punched card" signature
+// from Home — the card's top edge is perforated the same way the hero
+// timecard is, so every card floating on the lavender canvas in this app
+// reads as the same physical object.
+// ============================================
+
+:host {
+  display: block;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-6);
+  // Respect notches/home-indicators on phones when this screen is used
+  // full-bleed (the OTP screen — see the comment at the top of this file).
+  padding-top: max(var(--space-6), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+// ---------- Split-screen layout (login only — otp/forgot keep the plain .login-page) ----------
+
+.login-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  min-height: 100dvh;
+}
+
+.login-visual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--space-6) var(--space-7);
+  // A soft lavender-to-white wash instead of a flat fill — gives the
+  // decorative blobs somewhere to sit and keeps this panel from reading
+  // as a plain gray sidebar next to the lavender canvas everywhere else.
+  background: linear-gradient(160deg, var(--color-bg) 0%, var(--color-surface-2) 100%);
+}
+
+.visual-blob {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.visual-blob-a {
+  top: -80px;
+  right: -100px;
+  width: 340px;
+  height: 340px;
+  background: rgba(var(--color-primary-rgb), 0.16);
+}
+
+.visual-blob-b {
+  bottom: -60px;
+  left: -80px;
+  width: 300px;
+  height: 300px;
+  background: rgba(var(--color-accent-rgb), 0.14);
+}
+
+.visual-brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 0;
+    object-fit: contain;
+  }
+
+  .brand-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+  }
+}
+
+.visual-img {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  max-width: 520px;
+  margin: var(--space-6) auto 0;
+  object-fit: contain;
+  // Sits above the blobs like the illustration is resting on the canvas —
+  // a very soft ground shadow instead of a hard drop-shadow, since the
+  // source art has no shadow of its own baked in.
+  filter: drop-shadow(0 24px 32px rgba(var(--color-shadow-rgb), 0.12));
+}
+
+.visual-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  margin: 0 auto var(--space-6);
+  text-align: center;
+
+  h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-muted);
+  }
+}
+
+// ---------- Right-hand panel ----------
+
+.login-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  padding-top: max(var(--space-6), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 400px;
+  // Padding + a negative margin keeps the visible position identical while
+  // giving the link a real ~40px tap target instead of just its text line.
+  padding: var(--space-2) var(--space-2);
+  margin: calc(var(--space-2) * -1);
+  margin-bottom: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  app-icon {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+
+  &:hover {
+    color: var(--color-primary);
+    background: var(--color-surface-hover);
+
+    app-icon {
+      transform: translateX(-2px);
+    }
+  }
+}
+
+// ---------- Card ----------
+// The card carries the same perforated top edge as the Home hero timecard
+// — small holes punched through to the page's own background color — so
+// every card in the app reads as the same object at a glance.
+
+.login-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-8) var(--space-7) var(--space-7);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  animation: card-in 0.35s ease both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-image: radial-gradient(circle, var(--color-bg) 3.5px, transparent 3.5px);
+    background-size: 28px 10px;
+    background-position: center;
+    background-repeat: repeat-x;
+  }
+}
+
+// Small uppercase eyebrow chip shared by all three auth screens — same
+// component as Home's .hero-eyebrow, so "you're in the auth flow" reads
+// consistently everywhere it appears.
+.login-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 auto var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+}
+
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--space-4);
+  object-fit: contain;
+}
+
+.login-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.login-subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-muted);
+}
+
+// A monospace treatment for an email address quoted back at the person
+// (reset-password's "code sent to {{ email }}") — same digital-readout
+// face the hero timecard uses for anything precise/data-like, so quoting
+// their own email back reads as "we captured this exactly," not decoration.
+.subtitle-emphasis {
+  font-family: var(--font-family-mono);
+  font-size: 0.95em;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+// ---------- Form fields ----------
+
+.field {
+  margin-bottom: var(--space-5);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.field-input-wrap {
+  position: relative;
+}
+
+.field-input {
+  width: 100%;
+  // 44px is the standard minimum comfortable tap target on touchscreens —
+  // --padding-input alone (space-3/space-4) doesn't guarantee that on its
+  // own, so it's enforced explicitly rather than left to font metrics.
+  min-height: 44px;
+  padding: var(--padding-input);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  // Stays at --font-size-base (16px) at every breakpoint on purpose — an
+  // input font-size under 16px makes iOS Safari auto-zoom in on focus,
+  // which then has to be pinch-zoomed back out. Shrink line-height/padding
+  // for compact layouts instead of the font itself.
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+
+  &.has-trailing {
+    padding-right: var(--space-8);
+  }
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:hover:not(:focus) {
+    border-color: var(--color-border-hover);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+  }
+
+  // Angular's reactive forms add ng-touched/ng-invalid/ng-valid to the
+  // control element itself — styling off those means real-time validity
+  // feedback (required, invalid email, too-short password) with no
+  // template changes needed.
+  &.ng-touched.ng-invalid {
+    border-color: var(--color-danger);
+    background: rgba(var(--color-danger-rgb), 0.05);
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(var(--color-danger-rgb), 0.2);
+    }
+  }
+
+  // Chrome/Safari force a yellow autofill background by default, which
+  // clashes with the theme and looks broken — this repaints it to match
+  // the field's own surface color instead. The transition-delay trick is
+  // the only reliable cross-browser way to override the autofill color,
+  // since `background-color` itself can't be set on the internal autofill
+  // layer directly.
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface-2) inset;
+    transition: background-color 600000s ease-in-out 0s;
+  }
+}
+
+.forgot-link {
+  display: block;
+  margin-top: var(--space-2);
+  text-align: right;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: var(--space-2);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: var(--color-primary);
+    background: var(--color-surface-hover);
+  }
+}
+
+.form-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(var(--color-danger-rgb), 0.3);
+  background: rgba(var(--color-danger-rgb), 0.12);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  word-break: break-word;
+  animation: error-in 0.2s ease both;
+
+  &::before {
+    content: '!';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--color-danger);
+    color: #fff;
+    font-size: 11px;
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+// ---------- Submit ----------
+
+.submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--padding-button);
+  background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(var(--color-primary-rgb), 0.3);
+  transition: box-shadow 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 14px 28px rgba(var(--color-primary-rgb), 0.38);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  // Pure-CSS spinner — appears automatically whenever the button is
+  // disabled by the loading() signal, no extra markup required.
+  &:disabled::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+// ---------- Animations ----------
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card,
+  .form-error,
+  .submit-btn,
+  .submit-btn:disabled::before {
+    animation: none;
+    transition: none;
+  }
+}
+
+// ---------- Responsive (split-screen login only) ----------
+//
+// Three stops: the visual panel drops out first (900px) since it's purely
+// decorative, then spacing tightens twice more (480px, 360px) as the
+// screen gets tight enough that generous padding starts costing more
+// useful space than it's worth. The card itself always stays full-width
+// up to its 400px cap, so it never feels like it's floating loose in a
+// too-wide column on mid-size phones.
+
+@media (max-width: 900px) {
+  .login-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .login-visual {
+    display: none;
+  }
+
+  .login-panel {
+    min-height: 100dvh;
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .login-panel {
+    padding: var(--space-4);
+  }
+
+  .login-card {
+    padding: var(--space-6) var(--space-5) var(--space-5);
+  }
+
+  .login-title {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 360px) {
+  .login-panel {
+    padding: var(--space-3);
+  }
+
+  .login-card {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+
+  .back-btn {
+    max-width: none;
+  }
+}

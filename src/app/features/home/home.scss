@@ -1,0 +1,968 @@
+:host {
+  display: block;
+}
+
+.home-page {
+  // Home now leads the shared "timecard" palette from _variables.scss
+  // (lavender canvas, deep indigo primary, ink-stamp gold accent) instead
+  // of opting out of it. Only tokens with no root equivalent — the glass
+  // tint used on the sticky header and a couple of local radius bumps for
+  // the punch-card visual — are declared here.
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --radius-lg: 18px;
+
+  position: relative;
+  min-height: 100vh;
+  // `clip` (not `hidden`) — `overflow-x: hidden` implicitly computes
+  // `overflow-y: auto`, which turns this element into its own scroll
+  // container and traps the header's `position: sticky` inside it instead
+  // of the real page. `clip` still contains the decorative blobs below
+  // without creating that scroll container.
+  overflow-x: clip;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.bg-blob {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.bg-blob-a {
+  top: -120px;
+  right: -140px;
+  width: 460px;
+  height: 460px;
+  background: rgba(var(--color-primary-rgb), 0.18);
+}
+
+.bg-blob-b {
+  top: 900px;
+  left: -160px;
+  width: 420px;
+  height: 420px;
+  background: rgba(var(--color-accent-rgb), 0.14);
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+// ---------- Page loader ----------
+// Full-viewport splash shown until window `load` fires (see home.ts).
+// Sits outside .home-page so it isn't affected by the page's own
+// transform/z-index stacking.
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  background: var(--color-bg);
+  opacity: 1;
+  transition: opacity 0.4s ease;
+
+  &.is-hiding {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.loader-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  animation: loader-pulse 1.4s ease-in-out infinite;
+}
+
+.loader-dots {
+  display: flex;
+  gap: var(--space-2);
+
+  span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    animation: loader-bounce 1s ease-in-out infinite;
+
+    &:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+}
+
+@keyframes loader-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+}
+
+@keyframes loader-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-mark,
+  .loader-dots span {
+    animation: none;
+  }
+}
+
+// ---------- Shared bits ----------
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+// The footer band inverts to dark ink; give the logo a light chip behind
+// it there so it stays legible regardless of the mark's own colors.
+.home-footer .brand-mark {
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-sm);
+}
+
+.brand-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--padding-button);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: 1px solid var(--color-primary);
+  box-shadow: 0 10px 24px rgba(var(--color-primary-rgb), 0.3);
+
+  &:hover {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+.btn-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+// ---------- Focus ----------
+
+a:focus-visible,
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.section-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  color: var(--color-text);
+}
+
+.section-subtitle {
+  margin: 0 0 var(--space-7);
+  font-size: var(--font-size-base);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+#features,
+#how-it-works,
+#faq {
+  scroll-margin-top: 104px;
+}
+
+// ---------- Header ----------
+// Rebuilt as a real 3-column grid — brand / centered nav / actions —
+// instead of `space-between` + manual margin/padding on the nav. The old
+// layout let the nav hug the brand while the button got pushed hard right
+// by the leftover space, which is what read as "not arranged properly."
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+.header-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: var(--space-5);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(var(--color-shadow-rgb), 0.08);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease,
+    backdrop-filter 0.25s ease;
+
+  &.scrolled {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    box-shadow: 0 8px 32px rgba(var(--color-shadow-rgb), 0.12);
+  }
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+
+  a {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+}
+
+// ---------- Hero ----------
+
+.hero {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-7);
+  text-align: center;
+}
+
+.hero-eyebrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+}
+
+// A small digital-readout date next to the eyebrow — the first mono
+// character on the page, setting up "this app runs on precise time" before
+// the process strip below.
+.hero-date {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  letter-spacing: 0.02em;
+}
+
+.hero-title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.hero-subtitle {
+  margin: 0 auto var(--space-6);
+  max-width: 52ch;
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-muted);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+// ---------- Process strip (hero signature visual) ----------
+// A plain three-step strip — icon, label, connecting arrow — standing in
+// for the real Timesheet → PayrollRun workflow without a metaphor to decode.
+
+.process-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  list-style: none;
+  max-width: 620px;
+  margin: var(--space-7) auto 0;
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.process-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+}
+
+.process-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+}
+
+.process-step-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  text-align: center;
+}
+
+.process-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+  margin-top: -28px;
+}
+
+// ---------- Capabilities (hero follow-up section) ----------
+
+.capabilities {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-7) var(--space-8);
+}
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5);
+}
+
+.capability-card {
+  padding: var(--space-5);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-muted);
+  }
+}
+
+.capability-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  margin-top: var(--space-3);
+  padding: 2px var(--space-3);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-full);
+}
+
+// ---------- Features ----------
+// Left: a fixed intro tile + description. Right: a vertically scrolling
+// card list, capped to a fixed height. See onFeaturesWheel() in home.ts
+// for the wheel-redirect behavior — this file only handles the visual
+// side (snap points, hidden native scrollbar swapped for a slim styled
+// one, card sizing).
+
+.features {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-7);
+}
+
+// The wrap's height = the sticky layout's own height + the extra room
+// bound from home.ts (`pinWrapExtraHeight`, via padding-bottom). That
+// extra room is exactly the vertical distance the card list still needs
+// to travel — so the section holds still on screen for precisely as long
+// as there's a card left to bring into view, then releases with zero
+// dead scroll space on either side.
+.features-pin-wrap {
+  position: relative;
+}
+
+.features-layout {
+  position: sticky;
+  top: 104px; // matches the anchor scroll-margin-top used elsewhere
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-7);
+  align-items: center;
+}
+
+.features-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.features-tile {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+}
+
+.features-intro-text {
+  margin: 0;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-muted);
+}
+
+.features-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-subtle);
+
+  app-icon {
+    flex-shrink: 0;
+    color: var(--color-primary);
+  }
+}
+
+.features-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y proximity;
+  scroll-behavior: smooth;
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+  margin: calc(var(--space-2) * -1) calc(var(--space-4) * -1) calc(var(--space-2) * -1) calc(var(--space-2) * -1);
+
+  // Slim styled scrollbar instead of the bulky OS default — a visible
+  // hint that the list scrolls, without being the main way it's driven
+  // (the wheel-redirect and touch are).
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--color-primary-rgb), 0.45);
+    border-radius: var(--radius-full);
+  }
+}
+
+.feature-card-h {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  padding: var(--space-5);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    transform: translateX(4px);
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.feature-card-h-body {
+  min-width: 0;
+}
+
+.feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
+}
+
+.feature-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.feature-description {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-muted);
+}
+
+// ---------- How it works ----------
+
+.steps-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-7);
+}
+
+.steps-list {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+
+  // Decorative connector running behind the row, through the gaps between
+  // cards — cards sit on top (solid background + z-index) so the line only
+  // ever shows in the empty space that separates them.
+  &::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--space-5) + 18px);
+    left: 60px;
+    right: 60px;
+    height: 2px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--color-border) 0,
+      var(--color-border) 8px,
+      transparent 8px,
+      transparent 14px
+    );
+    z-index: 0;
+  }
+}
+
+.step-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-bold);
+}
+
+.step-body {
+  h3 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-muted);
+  }
+}
+
+// ---------- FAQ ----------
+
+.faq-section {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.faq-item {
+  padding: var(--space-1) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+
+  &.open {
+    border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  }
+}
+
+.faq-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4) 0;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.faq-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+
+  .open & {
+    transform: rotate(180deg);
+    color: var(--color-primary);
+  }
+}
+
+.faq-answer {
+  margin: 0;
+  padding: 0 0 var(--space-4);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-muted);
+}
+
+// ---------- Footer ----------
+
+// Dark ink-plum band — the canvas's closing bookend, so the page reads as
+// "lavender canvas, punched card, stamped shut" rather than fading out on
+// more lavender. Local overrides here (not root tokens) since this is the
+// one place in Home that intentionally inverts to dark.
+.home-footer {
+  --color-text: #f1eefc;
+  --color-text-muted: #b6acdc;
+
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-8);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+  background: linear-gradient(180deg, var(--color-ink-deep) 0%, var(--color-ink-deep-2) 100%);
+  color: var(--color-text);
+
+  .brand-name {
+    color: var(--color-text);
+  }
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.footer-brand p {
+  margin: var(--space-3) 0 0;
+  max-width: 280px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+
+  a {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.footer-bottom {
+  max-width: 1180px;
+  margin: var(--space-6) auto 0;
+  padding-top: var(--space-5);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+}
+
+// ---------- Responsive ----------
+
+@media (max-width: 900px) {
+  .capabilities-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .features-layout {
+    position: static;
+    grid-template-columns: 1fr;
+  }
+
+  // JS zeroes pinWrapExtraHeight below this breakpoint, so padding-bottom
+  // is already 0 — this just makes sure nothing here fights that.
+  .features-pin-wrap {
+    padding-bottom: 0 !important;
+  }
+
+  .features-intro {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-nav {
+    display: none;
+  }
+
+  // With the nav gone, collapse back to a 2-column grid (brand / actions)
+  // so the button pins to the far right instead of stranding in the
+  // middle of the leftover `1fr` track meant for the centered nav.
+  .header-inner {
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero {
+    padding: var(--space-6) var(--space-5) var(--space-7);
+  }
+
+  .capabilities,
+  .features,
+  .steps-section,
+  .faq-section {
+    padding: var(--space-7) var(--space-5);
+  }
+}
+
+@media (max-width: 560px) {
+  .capabilities-grid,
+  .steps-list {
+    grid-template-columns: 1fr;
+  }
+
+  .steps-list::before {
+    display: none;
+  }
+
+  // Three steps side-by-side don't fit a phone width — stack vertically
+  // instead, arrows rotated to point down.
+  .process-strip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .process-arrow {
+    align-self: center;
+    margin-top: 0;
+    transform: rotate(90deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    padding: var(--space-3) var(--space-4) 0;
+  }
+
+  .header-inner {
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  }
+
+  .brand-name {
+    display: none;
+  }
+
+  .hero-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .hero-subtitle {
+    font-size: var(--font-size-base);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+  }
+}

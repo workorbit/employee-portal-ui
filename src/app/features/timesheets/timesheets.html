@@ -1,0 +1,421 @@
+<app-shell pageTitle="My Timesheet">
+  <div class="page-tabs">
+    <button type="button" [class.active]="pageView() === 'list'" (click)="setPageView('list')">
+      <app-icon name="calendar" [size]="16" />
+      My Timesheets
+    </button>
+    <button type="button" [class.active]="pageView() === 'calendar'" (click)="setPageView('calendar')">
+      <app-icon name="calendar" [size]="16" />
+      Calendar
+    </button>
+  </div>
+
+  @if (pageView() === 'list') {
+    <section class="panel filter-panel">
+      <div class="filter-bar">
+        <div class="search-input-wrap">
+          <app-icon class="search-icon" name="search" [size]="14" />
+          <input
+            #searchInput
+            type="text"
+            class="field-input"
+            placeholder="Search weeks or notes…"
+            [ngModel]="listSearchInput()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="setListSearch($event)"
+          />
+          <kbd class="search-kbd">⌘K</kbd>
+        </div>
+
+        <div class="filter-pill">
+          <app-icon name="check" [size]="13" />
+          <select
+            aria-label="Status"
+            [ngModel]="listStatusFilter()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="setListStatusFilter($event)"
+          >
+            <option value="">All Statuses</option>
+            @for (opt of timesheetStatusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-pill">
+          <app-icon name="calendar" [size]="13" />
+          <select
+            aria-label="Type"
+            [ngModel]="listPeriodTypeFilter()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="setListPeriodTypeFilter($event)"
+          >
+            <option value="">All Types</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+
+        <div class="filter-pill">
+          <app-icon name="sort" [size]="13" />
+          <select
+            aria-label="Sort by"
+            [ngModel]="listSortOrder()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="setListSortOrder($event)"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          class="filters-toggle-btn"
+          [class.active]="showFiltersPanel()"
+          (click)="toggleFiltersPanel()"
+        >
+          <app-icon name="filter" [size]="14" />
+          Filters
+        </button>
+      </div>
+
+      @if (showFiltersPanel()) {
+        <div class="filter-bar filter-bar-extra">
+          <div class="filter-pill filter-pill-date">
+            <label for="filter-date-from">From</label>
+            <input
+              id="filter-date-from"
+              type="date"
+              [ngModel]="listDateFrom()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="setListDateFrom($event)"
+            />
+          </div>
+
+          <div class="filter-pill filter-pill-date">
+            <label for="filter-date-to">To</label>
+            <input
+              id="filter-date-to"
+              type="date"
+              [ngModel]="listDateTo()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="setListDateTo($event)"
+            />
+          </div>
+        </div>
+      }
+
+      @if (hasActiveFilters()) {
+        <div class="filter-chips-row">
+          @for (chip of activeFilterChips(); track chip.key) {
+            <span class="filter-chip">
+              {{ chip.label }}
+              <button type="button" (click)="removeFilterChip(chip.key)" aria-label="Remove filter">
+                <app-icon name="close" [size]="10" />
+              </button>
+            </span>
+          }
+          <button type="button" class="clear-all-btn" (click)="clearAllFilters()">Clear all</button>
+        </div>
+      }
+    </section>
+
+    <section class="panel list-panel">
+      @if (listLoading()) {
+        <p class="empty-caption">Loading timesheets…</p>
+      } @else if (sortedListItems().length === 0) {
+        <p class="empty-caption">No timesheets match these filters.</p>
+      } @else {
+        <div class="entries-list">
+          @for (t of sortedListItems(); track t.id) {
+            <div class="entry-card" [class]="t.status">
+              <span class="entry-icon">
+                <app-icon name="calendar" [size]="16" />
+              </span>
+              <div class="entry-main">
+                <div class="entry-title-row">
+                  <h4 class="entry-title">{{ periodWeekLabel(t) }}</h4>
+                  @if (t.periodType === 'weekly' && t.period === currentWeekPeriodKey()) {
+                    <span class="pill pill-primary">Current Week</span>
+                  }
+                </div>
+                <p class="entry-range">{{ periodRangeLabel(t) }}</p>
+              </div>
+              <div class="entry-col">
+                <p class="entry-col-value">{{ t.totalHours }} hrs</p>
+                <p class="entry-col-label">Hours Logged</p>
+              </div>
+              <div class="entry-col">
+                <p class="entry-status-row">
+                  <span class="status-dot"></span>
+                  <span class="status-text">{{ t.status }}</span>
+                </p>
+                <p class="entry-col-label">
+                  {{ t.status === 'draft' ? 'Not submitted' : (submittedOnFor(t) ? 'Submitted' : 'Not submitted yet') }}
+                </p>
+              </div>
+              <div class="entry-col entry-col-submitted">
+                @if (submittedOnFor(t)) {
+                  <p class="entry-submitted-row">
+                    <app-icon name="clock" [size]="13" />
+                    {{ submittedOnFor(t) | date: 'MMM d, y' }}
+                  </p>
+                  <p class="entry-col-label">{{ submittedOnFor(t) | date: 'h:mm a' }}</p>
+                } @else {
+                  <p class="entry-submitted-row muted">—</p>
+                }
+              </div>
+              <button type="button" class="view-details-btn" (click)="viewPeriodInCalendar(t)">
+                View Details
+                <app-icon name="chevron-right" [size]="14" />
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="pagination">
+          <span class="pagination-caption">{{ showingRangeLabel() }}</span>
+          <div class="pagination-controls">
+            <button type="button" [disabled]="listPage() === 1" (click)="goToPage(listPage() - 1)" aria-label="Previous page">
+              <app-icon name="chevron-left" [size]="14" />
+            </button>
+            @for (num of pageNumbers(); track num) {
+              <button type="button" [class.active]="num === listPage()" (click)="goToPage(num)">{{ num }}</button>
+            }
+            <button type="button" [disabled]="listPage() >= totalPages()" (click)="goToPage(listPage() + 1)" aria-label="Next page">
+              <app-icon name="chevron-right" [size]="14" />
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  } @else {
+    <section class="panel">
+      <div class="toolbar">
+        <div class="range-nav">
+          <button type="button" class="icon-btn" (click)="navigatePrev()" aria-label="Previous period">
+            <app-icon name="chevron-left" [size]="16" />
+          </button>
+          @if (viewMode() === 'weekly') {
+            <div class="range-picker-wrap">
+              <button type="button" class="range-label" (click)="openRangePicker()">{{ rangeLabel() }}</button>
+              <input
+                #rangeDateInput
+                type="date"
+                class="range-date-input"
+                tabindex="-1"
+                aria-hidden="true"
+                [ngModel]="customFromDate()"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="setCustomFrom($event)"
+              />
+            </div>
+          } @else {
+            <div class="range-field-pair">
+              <div class="range-field">
+                <label class="range-field-label" for="range-from">From</label>
+                <input
+                  id="range-from"
+                  type="date"
+                  class="range-field-input"
+                  [ngModel]="customFromDate()"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="setCustomFrom($event)"
+                />
+              </div>
+              <div class="range-field">
+                <label class="range-field-label" for="range-to">To</label>
+                <input
+                  id="range-to"
+                  type="date"
+                  class="range-field-input"
+                  [ngModel]="customToDate()"
+                  [ngModelOptions]="{ standalone: true }"
+                  disabled
+                />
+              </div>
+            </div>
+          }
+          <button type="button" class="icon-btn" (click)="navigateNext()" aria-label="Next period">
+            <app-icon name="chevron-right" [size]="16" />
+          </button>
+        </div>
+
+        <div class="toolbar-toggles">
+          <div class="toggle-group">
+            <button type="button" [class.active]="viewMode() === 'weekly'" (click)="setViewMode('weekly')">Weekly</button>
+            <button type="button" [class.active]="viewMode() === 'monthly'" (click)="setViewMode('monthly')">Monthly</button>
+          </div>
+        </div>
+      </div>
+
+      @if (isLocked()) {
+        <div class="lock-banner" [class.approved]="currentTimesheet()?.status === TimesheetStatus.APPROVED">
+          <app-icon name="lock" [size]="16" />
+          <span>{{ lockMessage() }} The fields below are read-only.</span>
+        </div>
+      }
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-icon">
+            <app-icon name="clock" [size]="20" />
+          </span>
+          <div>
+            <p class="stat-value">{{ totalHours() }} hrs</p>
+            <p class="stat-label">Total Hours</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon stat-icon-success">
+            <app-icon name="calendar-days" [size]="20" />
+          </span>
+          <div>
+            <p class="stat-value">{{ workingDaysCount() }} Days</p>
+            <p class="stat-label">Working Days</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon stat-icon-warning">
+            <app-icon name="trend" [size]="20" />
+          </span>
+          <div>
+            <p class="stat-value">{{ leaveDaysCount() }} Day</p>
+            <p class="stat-label">Leave Days</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon stat-icon-secondary">
+            <app-icon name="clock" [size]="20" />
+          </span>
+          <div>
+            <p class="stat-value">{{ overtimeHours() }} hrs</p>
+            <p class="stat-label">Overtime</p>
+          </div>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <p class="empty-caption">Loading timesheet…</p>
+      } @else {
+        <div class="timesheet-table-wrap">
+          <div class="table-header-row">
+            <h3 class="table-title">{{ viewMode() === 'weekly' ? 'Week' : 'Month' }}: {{ rangeLabel() }}</h3>
+            <div class="legend">
+              @for (option of statusOptions; track option.value) {
+                <span class="legend-item">
+                  <span class="legend-dot" [class]="option.value"></span>
+                  {{ option.label }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table class="timesheet-table">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Hours Worked</th>
+                  <th>Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (day of visibleDays(); track day.iso) {
+                  <tr>
+                    <td>{{ day.dayLabel }}</td>
+                    <td>{{ day.date.toLocaleDateString() }}</td>
+                    <td>
+                      <select
+                        class="status-select"
+                        [class]="dayEntries()[day.iso]?.status"
+                        [ngModel]="dayEntries()[day.iso]?.status"
+                        [ngModelOptions]="{ standalone: true }"
+                        [disabled]="isLocked()"
+                        (ngModelChange)="setDayStatus(day.iso, $event)"
+                      >
+                        @for (option of statusOptions; track option.value) {
+                          <option [value]="option.value">{{ option.label }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        class="hours-input"
+                        type="number"
+                        min="0"
+                        [ngModel]="dayEntries()[day.iso]?.hours"
+                        [ngModelOptions]="{ standalone: true }"
+                        [disabled]="isLocked() || dayEntries()[day.iso]?.status === TimesheetEntryStatus.WEEKEND || dayEntries()[day.iso]?.status === TimesheetEntryStatus.HOLIDAY || dayEntries()[day.iso]?.status === TimesheetEntryStatus.LEAVE || dayEntries()[day.iso]?.status === TimesheetEntryStatus.SICK_LEAVE"
+                        (ngModelChange)="updateHours(day.iso, $event)"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="comment-input"
+                        type="text"
+                        placeholder="-"
+                        [ngModel]="dayEntries()[day.iso]?.comment"
+                        [ngModelOptions]="{ standalone: true }"
+                        [disabled]="isLocked()"
+                        (ngModelChange)="updateDayComment(day.iso, $event)"
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="footer-grid">
+          <div class="comment-panel">
+            <label class="field-label" for="period-comment">Comment (Optional)</label>
+            <textarea
+              id="period-comment"
+              class="period-comment"
+              placeholder="Add any additional comments for this period…"
+              [ngModel]="periodComment()"
+              [ngModelOptions]="{ standalone: true }"
+              [disabled]="isLocked()"
+              (ngModelChange)="updatePeriodComment($event)"
+            ></textarea>
+            <p class="field-hint">You can add notes about your work, leaves, or any other information.</p>
+          </div>
+
+          <div class="summary-panel">
+            <dl>
+              <div class="summary-row"><dt>Total Hours</dt><dd>{{ totalHours() }} hrs</dd></div>
+              <div class="summary-row"><dt>Working Days</dt><dd>{{ workingDaysCount() }} Days</dd></div>
+              <div class="summary-row"><dt>Leave Days</dt><dd>{{ leaveDaysCount() }} Day</dd></div>
+              <div class="summary-row"><dt>Overtime</dt><dd>{{ overtimeHours() }} hrs</dd></div>
+              <div class="summary-row"><dt>Submitted On</dt><dd>{{ submittedOn() ? (submittedOn() | date: 'MM/dd/yyyy h:mm a') : '—' }}</dd></div>
+              <div class="summary-row">
+                <dt>Approval Status</dt>
+                <dd>
+                  <span class="status-pill" [class]="currentTimesheet()?.status || 'draft'">
+                    {{ currentTimesheet()?.status || 'Not submitted' }}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+
+            @if (!isLocked()) {
+              <div class="summary-actions">
+                <button type="button" class="secondary-btn" [disabled]="saving()" (click)="saveDraft()">
+                  Save Draft
+                </button>
+                <button type="button" class="cta-btn" [disabled]="saving()" (click)="submitTimesheet()">
+                  {{ saving() ? 'Submitting…' : 'Submit Timesheet' }}
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  }
+</app-shell>

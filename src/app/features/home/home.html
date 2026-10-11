@@ -1,0 +1,191 @@
+<div class="home-page">
+  <div class="bg-blob bg-blob-a"></div>
+  <div class="bg-blob bg-blob-b"></div>
+
+  <header class="site-header">
+    <div class="header-inner" [class.scrolled]="scrolled()">
+      <a class="brand" routerLink="/">
+        <img class="brand-mark" src="assets/images/Logo.png" alt="WorkHub logo" />
+        <span class="brand-name">WorkHub</span>
+      </a>
+
+      <nav class="header-nav">
+        @for (link of navLinks; track link.href) {
+          <a [href]="link.href">{{ link.label }}</a>
+        }
+      </nav>
+
+      @if (isAuthenticated()) {
+        <a class="btn btn-primary btn-sm" href="/dashboard" (click)="openDashboardInNewTab($event)">Go to dashboard</a>
+      } @else {
+        <a class="btn btn-primary btn-sm" routerLink="/login">Get Started</a>
+      }
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-eyebrow-row">
+        <span class="hero-eyebrow">WorkHub</span>
+        <span class="hero-date">{{ todayLabel }}</span>
+      </div>
+      <h1 class="hero-title">Never lose track of your hours again.</h1>
+      <p class="hero-subtitle">
+        Every day you log, every approval, every status change — all saved in one place you can
+        check anytime, from anywhere.
+      </p>
+      <div class="hero-actions">
+        @if (isAuthenticated()) {
+          <a class="btn btn-primary" href="/dashboard" (click)="openDashboardInNewTab($event)">Go to dashboard</a>
+        } @else {
+          <a class="btn btn-primary" routerLink="/login">Get Started</a>
+        }
+        <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
+      </div>
+
+      <!-- Simple process strip: the real workflow every hour logged in the
+           app moves through, shown as three plain steps instead of a
+           metaphor a first-time visitor has to decode. -->
+      <ol class="process-strip">
+        @for (step of processSteps; track step.label; let last = $last) {
+          <li class="process-step">
+            <span class="process-step-icon">
+              <app-icon [name]="step.icon" [size]="22" />
+            </span>
+            <span class="process-step-label">{{ step.label }}</span>
+          </li>
+          @if (!last) {
+            <li class="process-arrow" aria-hidden="true">
+              <app-icon name="chevron-right" [size]="18" />
+            </li>
+          }
+        }
+      </ol>
+    </section>
+
+    <section class="capabilities">
+      <h2 class="section-title">What you get from day one</h2>
+      <p class="section-subtitle">The essentials are ready now — more is on the way.</p>
+      <div class="capabilities-grid">
+        @for (item of capabilities; track item.title) {
+          <div class="capability-card">
+            <span class="capability-icon">
+              <app-icon [name]="item.icon" [size]="20" />
+            </span>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+            @if (item.comingSoon) {
+              <span class="coming-soon-badge">Coming soon</span>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ============================================
+         Features — intro tile on the left, horizontal
+         scrolling cards on the right. The section is
+         pinned in place (position: sticky) while you
+         scroll through the cards — the page itself
+         doesn't move until the last card, at which point
+         it releases and scrolls on normally. See
+         onFeaturesWheel()/recalcPinRoom() in home.ts.
+         ============================================ -->
+    <section class="features" id="features">
+      <h2 class="section-title">Built around the things you do every week</h2>
+      <p class="section-subtitle">Four screens. Everything you need, nothing you don't.</p>
+
+      <div class="features-pin-wrap" [style.paddingBottom.px]="pinWrapExtraHeight()">
+        <div class="features-layout" #featuresLayout>
+        <div class="features-intro">
+          <span class="features-tile">What's inside</span>
+          <p class="features-intro-text">
+            Timesheets, payroll, feedback, and insights — the four screens that make up your week,
+            side by side.
+          </p>
+          <span class="features-scroll-hint">
+            <app-icon name="scroll-down" [size]="16" />
+            Scroll to explore
+          </span>
+        </div>
+
+        <div
+          class="features-scroller"
+          #featureScroller
+          (wheel)="onFeaturesWheel($event)"
+        >
+          @for (feature of features; track feature.title) {
+            <div class="feature-card-h">
+              <span class="feature-icon">
+                <app-icon [name]="feature.icon" [size]="20" />
+              </span>
+              <div class="feature-card-h-body">
+                <h3 class="feature-title">{{ feature.title }}</h3>
+                <p class="feature-description">{{ feature.description }}</p>
+              </div>
+            </div>
+          }
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="steps-section" id="how-it-works">
+      <h2 class="section-title">How it works</h2>
+      <p class="section-subtitle">Log your hours, get them approved, and payroll takes it from there.</p>
+      <ol class="steps-list">
+        @for (step of steps; track step.title; let i = $index) {
+          <li class="step-item">
+            <span class="step-number">{{ i + 1 }}</span>
+            <div class="step-body">
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.description }}</p>
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+
+    <section class="faq-section" id="faq">
+      <h2 class="section-title">Frequently asked questions</h2>
+      <p class="section-subtitle">Still unsure? Here's what people usually ask.</p>
+      <div class="faq-list">
+        @for (item of faqs; track item.question; let i = $index) {
+          <div class="faq-item" [class.open]="openFaqIndex() === i">
+            <button type="button" class="faq-question" (click)="toggleFaq(i)">
+              <span>{{ item.question }}</span>
+              <app-icon class="faq-chevron" name="chevron-down" [size]="16" />
+            </button>
+            @if (openFaqIndex() === i) {
+              <p class="faq-answer">{{ item.answer }}</p>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="home-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="brand" routerLink="/">
+          <img class="brand-mark" src="assets/images/Logo.png" alt="WorkHub logo" />
+          <span class="brand-name">WorkHub</span>
+        </a>
+        <p>Your work day, all in one simple place.</p>
+      </div>
+
+      <nav class="footer-nav">
+        @for (link of navLinks; track link.href) {
+          <a [href]="link.href">{{ link.label }}</a>
+        }
+        <a routerLink="/login">Log in</a>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; {{ year }} Workforce Portal. All rights reserved.</p>
+    </div>
+  </footer>
+</div>

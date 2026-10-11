@@ -1,0 +1,18 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.icon {
+  display: inline-flex;
+}
+
+// The registry's raw SVG markup is inserted via [innerHTML], so it can't be
+// targeted with a plain descendant selector under emulated encapsulation —
+// :host ::ng-deep still scopes to this component's own host element only.
+:host ::ng-deep svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

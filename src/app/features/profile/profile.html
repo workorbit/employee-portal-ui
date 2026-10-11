@@ -1,0 +1,70 @@
+<app-shell pageTitle="Profile">
+  <section class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Contact info</h2>
+      @if (!editing() && profile()) {
+        <button type="button" class="edit-btn" (click)="startEdit()">Edit</button>
+      }
+    </div>
+
+    @if (profile(); as p) {
+      @if (editing()) {
+        <form [formGroup]="form" (ngSubmit)="save()">
+          @if (saveError()) {
+            <div class="form-error">{{ saveError() }}</div>
+          }
+
+          <div class="field">
+            <label class="field-label" for="edit-name">Name</label>
+            <input id="edit-name" type="text" class="field-input" formControlName="name" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="edit-email">Email</label>
+            <input id="edit-email" type="email" class="field-input" [value]="p.email" disabled />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="edit-department">Department</label>
+            <input id="edit-department" type="text" class="field-input" formControlName="department" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="edit-designation">Designation</label>
+            <input id="edit-designation" type="text" class="field-input" formControlName="designation" />
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="secondary-btn" [disabled]="saving()" (click)="cancelEdit()">
+              Cancel
+            </button>
+            <button type="submit" class="cta-btn" [disabled]="saving() || form.invalid">
+              {{ saving() ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        <dl class="info-grid">
+          <div>
+            <dt>Name</dt>
+            <dd>{{ p.name }}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{{ p.email }}</dd>
+          </div>
+          <div>
+            <dt>Department</dt>
+            <dd>{{ p.department || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Designation</dt>
+            <dd>{{ p.designation || '—' }}</dd>
+          </div>
+        </dl>
+      }
+    } @else {
+      <p class="empty-caption">Loading…</p>
+    }
+  </section>
+</app-shell>

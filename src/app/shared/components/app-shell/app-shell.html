@@ -1,0 +1,139 @@
+<div class="app-shell">
+  <aside class="sidebar" [class.collapsed]="collapsed()">
+    <div class="sidebar-brand-row">
+      <a class="sidebar-brand" routerLink="/dashboard">
+        <img class="brand-mark" src="assets/images/Logo.png" alt="WorkHub logo" />
+        @if (!collapsed()) {
+          <span class="brand-name">WorkHub</span>
+        }
+      </a>
+    </div>
+
+    @if (!collapsed()) {
+      <span class="sidebar-section-label">Menu</span>
+    }
+
+    <nav class="sidebar-nav">
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="active" [title]="collapsed() ? 'Dashboard' : ''">
+        <app-icon name="dashboard" [size]="18" />
+        @if (!collapsed()) {
+          <span>Dashboard</span>
+        }
+      </a>
+      <a class="nav-item" routerLink="/timesheets" routerLinkActive="active" [title]="collapsed() ? 'Timesheets' : ''">
+        <app-icon name="timesheets" [size]="18" />
+        @if (!collapsed()) {
+          <span>Timesheets</span>
+        }
+      </a>
+      <a class="nav-item" routerLink="/payroll" routerLinkActive="active" [title]="collapsed() ? 'Payroll' : ''">
+        <app-icon name="payroll" [size]="18" />
+        @if (!collapsed()) {
+          <span>Payroll</span>
+        }
+      </a>
+      <a class="nav-item" routerLink="/feedback" routerLinkActive="active" [title]="collapsed() ? 'Feedback' : ''">
+        <app-icon name="feedback" [size]="18" />
+        @if (!collapsed()) {
+          <span>Feedback</span>
+        }
+      </a>
+      <a class="nav-item" routerLink="/reports" routerLinkActive="active" [title]="collapsed() ? 'Reports' : ''">
+        <app-icon name="insights" [size]="18" />
+        @if (!collapsed()) {
+          <span>Reports</span>
+        }
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="user-avatar">{{ initials() }}</span>
+      @if (!collapsed()) {
+        <span class="sidebar-footer-name">{{ displayName() }}</span>
+      }
+      <button type="button" class="sidebar-logout-btn" (click)="logout()" aria-label="Log out" title="Log out">
+        <app-icon name="logout" [size]="16" />
+      </button>
+    </div>
+  </aside>
+
+  <!-- Straddles the sidebar's right border — half in the sidebar, half in
+       the main content — rather than living inside either one. -->
+  <button
+    type="button"
+    class="collapse-toggle"
+    [class.collapsed]="collapsed()"
+    (click)="toggleCollapsed()"
+    [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+  >
+    <app-icon name="sidebar-toggle" [size]="14" />
+  </button>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">{{ pageTitle }}</h1>
+      </div>
+
+      <div class="topbar-right">
+        <div class="profile-menu">
+          <button type="button" class="profile-trigger" [class.open]="profileMenuOpen()" (click)="toggleProfileMenu()">
+            <span class="user-avatar">{{ initials() }}</span>
+            <span class="profile-trigger-name">{{ displayName() }}</span>
+            <app-icon name="chevron-down" [size]="14" />
+          </button>
+
+          @if (profileMenuOpen()) {
+            <div class="profile-backdrop" (click)="closeProfileMenu()"></div>
+            <div class="profile-dropdown">
+              <div class="profile-dropdown-header">
+                <span class="user-avatar">{{ initials() }}</span>
+                <div class="profile-dropdown-meta">
+                  <p class="profile-dropdown-name">{{ displayName() }}</p>
+                  <span class="role-badge">Employee</span>
+                </div>
+              </div>
+              <div class="profile-dropdown-company">WorkHub</div>
+              <a class="profile-dropdown-item" routerLink="/profile" [queryParams]="{ edit: 1 }" (click)="closeProfileMenu()">
+                <app-icon name="profile" [size]="16" />
+                Edit Profile
+              </a>
+              <a class="profile-dropdown-item" routerLink="/forgot-password" (click)="closeProfileMenu()">
+                <app-icon name="lock" [size]="16" />
+                Change Password
+              </a>
+              <button type="button" class="profile-dropdown-item logout" (click)="logout()">
+                <app-icon name="logout" [size]="16" />
+                Log out
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <ng-content></ng-content>
+    </main>
+
+    <!-- Mobile-only: replaces the sidebar entirely below 768px — icon-only,
+         direct one-tap access to every page instead of a hamburger + drawer. -->
+    <nav class="mobile-bottom-nav">
+      <a class="mobile-nav-item" routerLink="/dashboard" routerLinkActive="active" aria-label="Dashboard">
+        <app-icon name="dashboard" [size]="20" />
+      </a>
+      <a class="mobile-nav-item" routerLink="/timesheets" routerLinkActive="active" aria-label="Timesheets">
+        <app-icon name="timesheets" [size]="20" />
+      </a>
+      <a class="mobile-nav-item" routerLink="/payroll" routerLinkActive="active" aria-label="Payroll">
+        <app-icon name="payroll" [size]="20" />
+      </a>
+      <a class="mobile-nav-item" routerLink="/feedback" routerLinkActive="active" aria-label="Feedback">
+        <app-icon name="feedback" [size]="20" />
+      </a>
+      <a class="mobile-nav-item" routerLink="/reports" routerLinkActive="active" aria-label="Reports">
+        <app-icon name="insights" [size]="20" />
+      </a>
+    </nav>
+  </div>
+</div>

@@ -1,0 +1,128 @@
+<app-shell pageTitle="Reports">
+  <section class="kpi-row">
+    <div class="kpi-tile">
+      <span class="kpi-icon"><app-icon name="clock" [size]="18" /></span>
+      <div>
+        <p class="kpi-label">Total hours logged</p>
+        <p class="kpi-value">{{ totalHoursLogged() }}</p>
+      </div>
+    </div>
+    <div class="kpi-tile">
+      <span class="kpi-icon"><app-icon name="timesheets" [size]="18" /></span>
+      <div>
+        <p class="kpi-label">Timesheets submitted</p>
+        <p class="kpi-value">{{ submittedTimesheetsCount() }}</p>
+      </div>
+    </div>
+    <div class="kpi-tile">
+      <span class="kpi-icon kpi-icon-success"><app-icon name="check" [size]="18" /></span>
+      <div>
+        <p class="kpi-label">Approval rate</p>
+        <p class="kpi-value">{{ approvalRate() !== null ? approvalRate() + '%' : '—' }}</p>
+      </div>
+    </div>
+    <div class="kpi-tile">
+      <span class="kpi-icon"><app-icon name="payroll" [size]="18" /></span>
+      <div>
+        <p class="kpi-label">Net pay received</p>
+        <p class="kpi-value">{{ totalNetPayReceived() }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="table-header-row">
+      <h2 class="panel-title">Timesheet history</h2>
+      <select
+        class="field-input filter-select"
+        [ngModel]="timesheetHistoryFilter()"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="setTimesheetHistoryFilter($event)"
+      >
+        <option value="">All statuses</option>
+        @for (opt of timesheetStatusOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    @if (timesheetHistory().length === 0) {
+      <p class="empty-caption">No timesheets match this filter.</p>
+    } @else {
+      <div class="table-scroll">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Type</th>
+              <th>Hours</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (timesheet of timesheetHistory(); track timesheet.id) {
+              <tr>
+                <td>{{ periodLabel(timesheet) }}</td>
+                <td class="capitalize">{{ timesheet.periodType }}</td>
+                <td>{{ timesheet.totalHours }}</td>
+                <td><span class="status-pill" [class]="timesheet.status">{{ timesheet.status }}</span></td>
+                <td>{{ timesheet.createdAt | date: 'MM/dd/yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="panel">
+    <div class="table-header-row">
+      <h2 class="panel-title">Payroll history</h2>
+      <select
+        class="field-input filter-select"
+        [ngModel]="payrollHistoryFilter()"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="setPayrollHistoryFilter($event)"
+      >
+        <option value="">All statuses</option>
+        @for (opt of payrollStatusOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    @if (payrollHistory().length === 0) {
+      <p class="empty-caption">No payroll claims match this filter.</p>
+    } @else {
+      <div class="table-scroll">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Basic</th>
+              <th>Bonus</th>
+              <th>Reimbursement</th>
+              <th>Deductions</th>
+              <th>Net pay</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (claim of payrollHistory(); track claim.id) {
+              <tr>
+                <td>{{ periodLabel(claim) }}</td>
+                <td>{{ claim.basicPay }}</td>
+                <td>{{ claim.bonus }}</td>
+                <td>{{ claim.reimbursement }}</td>
+                <td>{{ claim.deductions }}</td>
+                <td>{{ claim.netPay }}</td>
+                <td><span class="status-pill" [class]="claim.status">{{ claim.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</app-shell>

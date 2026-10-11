@@ -1,0 +1,75 @@
+<div class="login-screen">
+  <div class="login-visual">
+    <div class="visual-blob visual-blob-a"></div>
+    <div class="visual-blob visual-blob-b"></div>
+    <a class="visual-brand" routerLink="/">
+      <img class="brand-mark" src="assets/images/Logo.png" alt="WorkHub logo" />
+      <span class="brand-name">WorkHub</span>
+    </a>
+    <img
+      class="visual-img"
+      src="assets/images/Login_Page_Img.png"
+      alt="Illustration of an employee dashboard"
+    />
+    <div class="visual-copy">
+      <h2>Welcome back</h2>
+      <p>Sign in to track your hours, view your payslips, and stay in the loop.</p>
+    </div>
+  </div>
+
+  <div class="login-panel">
+    <a class="back-btn" routerLink="/">
+      <app-icon name="arrow-back" [size]="16" />
+      Back to home
+    </a>
+
+    <div class="login-card">
+      <div class="login-header">
+        <img class="brand-mark" src="assets/images/Logo.png" alt="WorkHub logo" />
+        <span class="login-badge">Secure sign-in</span>
+        <h1 class="login-title">WorkHub</h1>
+        <p class="login-subtitle">Sign in to track time, view pay, and stay in the loop.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        @if (error()) {
+          <div class="form-error">{{ error() }}</div>
+        }
+
+        <div class="field">
+          <label class="field-label" for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            class="field-input"
+            formControlName="email"
+            placeholder="you@company.com"
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="password">Password</label>
+          <div class="field-input-wrap">
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="field-input has-trailing"
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="submit-btn" [disabled]="loading()">
+          {{ loading() ? 'Signing in…' : 'Sign in' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,91 @@
+<app-shell pageTitle="Feedback">
+  <section class="panel form-panel">
+    <h2 class="panel-title">Raise a concern</h2>
+    <p class="panel-caption">
+      Tell us what's wrong — payroll, timesheets, a portal bug, or anything else. Your employer will reply here.
+    </p>
+
+    <div class="field">
+      <label class="field-label" for="feedback-category">Category</label>
+      <select
+        id="feedback-category"
+        class="field-input"
+        [ngModel]="category()"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="setCategory($event)"
+      >
+        @for (option of categoryOptions; track option) {
+          <option [value]="option">{{ categoryLabel(option) }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="feedback-description">What's going on?</label>
+      <textarea
+        id="feedback-description"
+        class="field-input description-input"
+        placeholder="Describe the issue in a bit of detail…"
+        [ngModel]="description()"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="setDescription($event)"
+      ></textarea>
+    </div>
+
+    <button type="button" class="cta-btn" [disabled]="!canSubmit()" (click)="submit()">
+      {{ saving() ? 'Submitting…' : 'Submit Feedback' }}
+    </button>
+  </section>
+
+  <section class="panel list-panel">
+    <h2 class="panel-title">My Feedback</h2>
+
+    @if (loading()) {
+      <p class="empty-caption">Loading feedback…</p>
+    } @else if (sortedItems().length === 0) {
+      <div class="empty-state">
+        <app-icon name="feedback" [size]="28" />
+        <p>You haven't raised anything yet.</p>
+      </div>
+    } @else {
+      <div class="feedback-list">
+        @for (item of sortedItems(); track item.id) {
+          <div class="feedback-card">
+            <div class="feedback-header">
+              <div>
+                <span class="category-pill">{{ categoryLabel(item.category) }}</span>
+                <p class="feedback-date">Raised {{ item.createdAt | date: 'MMM d, y, h:mm a' }}</p>
+              </div>
+              <span class="status-pill" [class]="item.status">
+                @if (item.status === 'resolved') {
+                  <app-icon name="check" [size]="12" />
+                } @else {
+                  <app-icon name="clock" [size]="12" />
+                }
+                {{ statusLabel(item.status) }}
+              </span>
+            </div>
+
+            <p class="feedback-description">{{ item.description }}</p>
+
+            @if (item.replies.length > 0) {
+              <div class="reply-thread">
+                @for (reply of item.replies; track reply.at) {
+                  <div class="reply-bubble">
+                    <div class="reply-meta">
+                      <span class="reply-from">Employer</span>
+                      <span class="reply-at">{{ reply.at | date: 'MMM d, y, h:mm a' }}</span>
+                    </div>
+                    <p class="reply-message">{{ reply.message }}</p>
+                  </div>
+                }
+              </div>
+            } @else if (item.status === 'open') {
+              <p class="awaiting-caption">Awaiting a reply from your employer.</p>
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
+</app-shell>

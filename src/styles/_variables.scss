@@ -1,0 +1,146 @@
+// ============================================
+// DESIGN TOKENS — single source of truth for the whole app.
+//
+// This used to be split across this file (spacing/typography) and a
+// Tailwind `@theme` block in tailwind-base.scss (colors/radius). Both
+// Tailwind and Bootstrap have been removed from the build: neither was
+// actually used anywhere — no template referenced a real Tailwind utility
+// class or a real Bootstrap component class, every screen in this app is
+// hand-rolled custom SCSS. Worse, Tailwind's `@theme` block only emits a
+// custom property into the compiled CSS when a *utility class* using it
+// is found in the scanned templates (e.g. `bg-primary`) — since nothing
+// here used Tailwind classes, none of --color-*/--radius-* were ever
+// actually emitted as real CSS. Every `var(--color-*)`/`var(--radius-*)`
+// reference in the app was silently resolving to nothing.
+//
+// Plain :root custom properties (this file) always compile, regardless of
+// how — or whether — anything else "uses" them first.
+//
+// ============================================
+
+// Self-hosted Inter (Latin subset only — this app's UI is English-only).
+// Variable-weight woff2: one file covers the whole 400–700 range used
+// below, so a single @font-face with a weight range is enough instead of
+// one block per weight. Downloaded from Google Fonts' own CDN so the app
+// doesn't depend on fonts.googleapis.com/fonts.gstatic.com at runtime.
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  // ---- Spacing scale ----
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  // ---- Component padding shortcuts ----
+  --padding-card: var(--space-5);
+  --padding-input: var(--space-3) var(--space-4);
+  --padding-button: var(--space-3) var(--space-5);
+  --padding-page: var(--space-6);
+
+  // ---- Typography scale ----
+  --font-family-base: 'Inter', 'Segoe UI', sans-serif;
+  // Reserved for anything that IS time or a count — hours, dates, step
+  // numbers, status codes. A system stack (no font file needed) that reads
+  // like a digital time-clock readout, used deliberately to make
+  // time-tracking legible at a glance rather than as a general-purpose face.
+  --font-family-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 40px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  // ---- Radius — flat/minimal: modest, consistent rounding, no heavy curves ----
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  // ---- Colors — light theme (default) ----
+  // "Timecard" palette: a lavender canvas the whole app sits on (bg), white
+  // cards punched out of it like paper timecards (surface), a deep electric
+  // indigo for action/brand (primary — deliberately not the generic
+  // Tailwind-violet #8b5cf6 the app used before), and a warm ink-stamp gold
+  // reserved ONLY for "approved / paid" moments, echoing a rubber approval
+  // stamp on a physical timesheet. A near-black plum (not pure #1e1e1e) for
+  // text keeps everything in the same family instead of going neutral-gray.
+  --color-bg: #f4f2fd;
+  --color-bg-alt: #d9d4f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3f1fc;
+  --color-surface-hover: #ece7fb;
+  --color-surface-active: #dcd4f7;
+  // A touch lighter than --color-bg — for cards that should lift gently off
+  // the lavender canvas without punching all the way out to white paper.
+  --color-surface-soft: #ece9fb;
+
+  // Deep plum-black — a near-black band used for the footer/CTA bookend so
+  // the lavender canvas has a dark anchor, not just light-on-light.
+  --color-ink-deep: #170f30;
+  --color-ink-deep-2: #221548;
+
+  --color-text: #1a1130;
+  --color-text-muted: #5c5480;
+  --color-text-subtle: #8b83ab;
+
+  --color-border: #d6cff2;
+  --color-border-hover: #b9adea;
+
+  --color-primary: #4b2af0;
+  --color-primary-dark: #3a1ecb;
+  --color-primary-rgb: 75, 42, 240;
+
+  --color-secondary: #5c5480;
+
+  // Ink-stamp gold — "approved" / "paid" only. Never used as a general
+  // accent, so it keeps its meaning when it appears.
+  --color-accent: #d98c1f;
+  --color-accent-dark: #b8730f;
+  --color-accent-rgb: 217, 140, 31;
+
+  --color-success: #1c8a52;
+  --color-success-rgb: 28, 138, 82;
+  // Distinctly more orange/red than --color-accent's yellow-gold — kept
+  // separate on purpose. --color-accent (the "stamp" color) means "paid";
+  // --color-warning means "pending/needs attention." Using the same hue
+  // for both would make a pending item look like it had already been paid.
+  --color-warning: #c9631f;
+  --color-warning-rgb: 201, 99, 31;
+  --color-danger: #c8323f;
+  --color-danger-rgb: 200, 50, 63;
+
+  // ---- Focus ----
+  --color-focus-ring: rgba(var(--color-primary-rgb), 0.3);
+
+  // ---- Shadows — soft, lifted paper-card shadows against the lavender
+  // canvas rather than the flat near-invisible shadow used on white-on-white ----
+  --color-shadow-rgb: 23, 15, 48;
+  --shadow-card: 0 1px 2px rgba(var(--color-shadow-rgb), 0.05), 0 8px 24px rgba(var(--color-shadow-rgb), 0.08);
+  --shadow-card-hover: 0 4px 8px rgba(var(--color-shadow-rgb), 0.08), 0 16px 36px rgba(var(--color-shadow-rgb), 0.14);
+
+  color-scheme: light;
+}
